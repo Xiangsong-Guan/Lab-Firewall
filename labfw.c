@@ -17,9 +17,9 @@ MODULE_LICENSE("GPL");
 
 /* some uilt function for string to net struct */
 static unsigned int port_str_to_int(char *port_str);
-static void port_int_to_str(unsigned int port, char *port_str);
+// static void port_int_to_str(unsigned int port, char *port_str);
 static unsigned int ip_str_to_hl(char *ip_str);
-static void ip_hl_to_str(unsigned int ip, char *ip_str);
+// static void ip_hl_to_str(unsigned int ip, char *ip_str);
 
 /* some prototype for denys linked list */
 static int make_deny(char lines[4][MAX_RULE_LEN]);
@@ -64,7 +64,7 @@ static unsigned int lab_fw_hookfn(void *priv, struct sk_buff *skb,
 
   if (!skb) {
 #ifdef DEBUG
-    printk(PROCF_NAME ": null skb");
+    printk(KERN_INFO "null skb");
 #endif
     return NF_ACCEPT;
   }
@@ -83,7 +83,7 @@ static unsigned int lab_fw_hookfn(void *priv, struct sk_buff *skb,
 static int juge(const struct net_device *in, struct sk_buff *skb,
                 struct deny *r) {
 #ifdef DEBUG
-  printk(PROCF_NAME ": packet from %s", in->name);
+  printk(KERN_INFO "packet from %s", in->name);
 #endif
 
   /* Check the interface deny first */
@@ -122,7 +122,7 @@ static int check_trans_packet(struct sk_buff *skb, unsigned int dport,
   struct iphdr *iph = (struct iphdr *)skb_network_header(skb);
   if (!iph) {
 #ifdef DEBUG
-    printk(PROCF_NAME ": null iph");
+    printk(KERN_INFO "null iph");
 #endif
     return NF_ACCEPT;
   }
@@ -222,13 +222,13 @@ static ssize_t lab_fw_procf_write(struct file *file, const char __user *buffer,
   memset(lines, 0, 4 * MAX_RULE_LEN);
 
   /*read the write content into the storage buffer*/
-  printk(PROCF_NAME ": count: %ld", count);
+  printk(KERN_INFO "count: %ld", count);
   if (count > PROCF_MAX_SIZE) {
-    printk(PROCF_NAME ": not enough space for new deny");
+    printk(KERN_ERR "not enough space for new deny");
     return -ENOSPC;
   }
   if (copy_from_user(procf_buffer, buffer, count)) {
-    printk(PROCF_NAME ": memory copy failed");
+    printk(KERN_ERR "memory copy failed");
     return -EFAULT;
   }
 
@@ -272,7 +272,7 @@ static ssize_t lab_fw_procf_write(struct file *file, const char __user *buffer,
   printk(KERN_INFO "protocols: %s", lines[3]);
 
   if (0 != make_deny(lines)) {
-    printk(PROCF_NAME ": no kernel memory");
+    printk(KERN_ERR "no kernel memory");
     return -ENOMEM;
   }
   return count;
@@ -289,17 +289,17 @@ static int __init lab_fw_init(void) {
   /* creat proc file */
   fw_proc_file = proc_create(PROCF_NAME, 0200, NULL, &lab_fw_proc_fops);
   if (!fw_proc_file) {
-    printk(PROCF_NAME ": Error: could not initialize /proc/", PROCF_NAME);
+    printk(KERN_ERR "Error: could not initialize /proc/" PROCF_NAME);
     return -EAGAIN;
   }
-  procf_buffer = (char *)kmalloc(PROCF_MAX_SIZE);
+  procf_buffer = (char *)kmalloc(PROCF_MAX_SIZE, GFP_KERNEL);
   if (!procf_buffer) {
-    printk(PROCF_NAME ": Error: could not initialize memory");
+    printk(KERN_ERR "Error: could not initialize memory");
     return -ENOMEM;
   }
 
-  printk(PROCF_NAME ": Network hooks successfully installed.\n");
-  printk(PROCF_NAME ": Module installation successful.\n");
+  printk(KERN_INFO "Network hooks successfully installed.\n");
+  printk(KERN_INFO "Module installation successful.\n");
   return 0;
 }
 module_init(lab_fw_init);
@@ -319,7 +319,7 @@ static void __exit lab_fw_exit(void) {
   kfree(procf_buffer);
   /* Remove IPV4 hook */
   nf_unregister_net_hook(&init_net, &nfkiller);
-  printk(PROCF_NAME ": Removal of module successful.\n");
+  printk(KERN_INFO "Removal of module successful.\n");
 }
 module_exit(lab_fw_exit);
 
@@ -339,9 +339,9 @@ static unsigned int port_str_to_int(char *port_str) {
   return port;
 }
 
-static void port_int_to_str(unsigned int port, char *port_str) {
-  sprintf(port_str, "%u", port);
-}
+// static void port_int_to_str(unsigned int port, char *port_str) {
+//   sprintf(port_str, "%u", port);
+// }
 
 /*convert from byte array to host long integer format*/
 static unsigned int ip_str_to_hl(char *ip_str) {
@@ -378,13 +378,13 @@ static unsigned int ip_str_to_hl(char *ip_str) {
 }
 
 /*convert hl to byte array first*/
-static void ip_hl_to_str(unsigned int ip, char *ip_str) {
-  unsigned char ip_array[4];
-  memset(ip_array, 0, 4);
-  ip_array[0] = (ip_array[0] | (ip >> 24));
-  ip_array[1] = (ip_array[1] | (ip >> 16));
-  ip_array[2] = (ip_array[2] | (ip >> 8));
-  ip_array[3] = (ip_array[3] | ip);
-  sprintf(ip_str, "%u.%u.%u.%u", ip_array[0], ip_array[1], ip_array[2],
-          ip_array[3]);
-}
+// static void ip_hl_to_str(unsigned int ip, char *ip_str) {
+//   unsigned char ip_array[4];
+//   memset(ip_array, 0, 4);
+//   ip_array[0] = (ip_array[0] | (ip >> 24));
+//   ip_array[1] = (ip_array[1] | (ip >> 16));
+//   ip_array[2] = (ip_array[2] | (ip >> 8));
+//   ip_array[3] = (ip_array[3] | ip);
+//   sprintf(ip_str, "%u.%u.%u.%u", ip_array[0], ip_array[1], ip_array[2],
+//           ip_array[3]);
+// }
